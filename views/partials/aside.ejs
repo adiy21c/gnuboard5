@@ -1,0 +1,55 @@
+<div id="aside">
+    <% if (locals.outlogin_skin) { %>
+        <%- locals.outlogin_skin %>
+    <% } else { %>
+        <%# Default outlogin content if locals.outlogin_skin is not provided %>
+        <div class="outlogin_widget">
+            <% if (locals.is_member) { %>
+                <h4><%= locals.member_nick || "사용자" %>님</h4>
+                <a href="/bbs/logout.php" class="btn_logout">로그아웃</a>
+                <a href="/bbs/member_confirm.php?url=/bbs/register_form.php" class="btn_modify">정보수정</a>
+                <% if (locals.is_admin) { %>
+                    <a href="/adm" class="btn_admin">관리자</a>
+                <% } %>
+            <% } else { %>
+                <h4>로그인</h4>
+                <form action="/bbs/login_check.php" method="post">
+                    <input type="text" name="mb_id" placeholder="아이디" required>
+                    <input type="password" name="mb_password" placeholder="비밀번호" required>
+                    <button type="submit">로그인</button>
+                    <div>
+                        <a href="/bbs/register.php">회원가입</a>
+                        <a href="/bbs/password_lost.php">ID/PW찾기</a>
+                    </div>
+                </form>
+            <% } %>
+        </div>
+    <% } %>
+
+    <% if (locals.poll_skin) { %>
+        <%- locals.poll_skin %>
+    <% } else { %>
+        <%# Default poll content if locals.poll_skin is not provided %>
+        <% if (locals.poll) { %>
+        <div class="poll_widget">
+            <h4><%= locals.poll.po_subject %></h4>
+            <form name="fpoll" action="/bbs/poll_update.php" method="post">
+            <input type="hidden" name="po_id" value="<%= locals.poll.po_id %>">
+            <input type="hidden" name="skin_dir" value="basic"> <%# Assuming basic skin %>
+                <ul>
+                    <% for(let i=1; i<=9; i++) { %>
+                        <% if (locals.poll['po_poll'+i]) { %>
+                            <li>
+                                <input type="radio" name="gb_poll" value="<%= i %>" id="gb_poll_<%= i %>">
+                                <label for="gb_poll_<%= i %>"><%= locals.poll['po_poll'+i] %></label>
+                            </li>
+                        <% } %>
+                    <% } %>
+                </ul>
+                <button type="submit">투표하기</button>
+                <a href="/bbs/poll_result.php?po_id=<%= locals.poll.po_id %>&skin_dir=basic">결과보기</a>
+            </form>
+        </div>
+        <% } %>
+    <% } %>
+</div>

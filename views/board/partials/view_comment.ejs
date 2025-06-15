@@ -1,0 +1,106 @@
+<%# views/board/partials/view_comment.ejs %>
+
+<%
+// Helper function to format date (can be moved to a global helper)
+function formatCommentDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}-${('0' + date.getDate()).slice(-2)} ${('0' + date.getHours()).slice(-2)}:${('0' + date.getMinutes()).slice(-2)}`;
+}
+// const get_member_profile_img_co = (mb_id) => mb_id ? `<img src="/img/no_profile.gif" alt="co_profile" style="width:20px;height:20px;border-radius:50%;"> (${mb_id})` : '<img src="/img/no_profile.gif" alt="co_profile" style="width:20px;height:20px;border-radius:50%;">';
+const get_member_profile_img_co = (mb_id) => {
+    const profileImgSrc = locals.member_profile_images && locals.member_profile_images[mb_id]
+                        ? locals.member_profile_images[mb_id]
+                        : '/img/no_profile.gif';
+    return `<img src="${profileImgSrc}" alt="comment_profile" style="width:20px;height:20px;border-radius:50%;">`;
+};
+
+
+%>
+
+<section id="bo_vc">
+    <h2>댓글목록</h2>
+    <% if (comments && comments.length > 0) { %>
+        <% comments.forEach(comment => { %>
+            <article id="c_<%= comment.co_id %>" class="bo_vc_article <% if (comment.co_depth > 0) { %>bo_vc_reply<% } %>">
+                <div class="profile_info">
+                    <div class="pf_img"><%- get_member_profile_img_co(comment.mb_id) %></div>
+                    <div class="profile_info_ct">
+                        <strong><%= comment.co_name || comment.mb_id || '익명' %></strong>
+                        <% if (comment.co_ip && locals.is_ip_view_comment) { %> (<%= comment.co_ip.substring(0, comment.co_ip.lastIndexOf('.') + 1) %>x) <% } %>
+                        <span class="if_date"><i class="fa fa-clock-o"></i> <%= formatCommentDate(comment.co_datetime) %></span>
+                    </div>
+                </div>
+
+                <div class="cmt_contents" style="padding-left: <%= comment.co_depth * 20 %>px;">
+                    <% if (comment.is_secret && !locals.is_comment_owner_or_admin) { %>
+                        <p>비밀 댓글입니다.</p>
+                    <% } else { %>
+                        <%- comment.co_content %> <%# Assuming co_content is safe HTML or sanitized by server %>
+                    <% } %>
+                </div>
+
+                <div class="cmt_options">
+                    <% if (locals.can_reply_comment) { %><a href="#" class="btn_reply_comment" data-co-id="<%= comment.co_id %>">답변</a><% } %>
+                    <% if (locals.can_edit_comment && comment.mb_id === locals.current_user_id) { %><a href="#">수정</a><% } %>
+                    <% if (locals.can_delete_comment && comment.mb_id === locals.current_user_id) { %><a href="#" onclick="return confirm('삭제하시겠습니까?');">삭제</a><% } %>
+                </div>
+            </article>
+        <% }); %>
+    <% } else { %>
+        <p class="no_comment">등록된 댓글이 없습니다.</p>
+    <% } %>
+
+    <% if (locals.can_write_comment) { %>
+    <aside id="bo_vc_w">
+        <h2>댓글쓰기</h2>
+        <form name="fviewcomment" action="/board/<%= bo_table %>/<%= wr_id %>/comment" method="post" autocomplete="off">
+            <input type="hidden" name="w" value=""> <%# 'c' for new, 'cu' for update %>
+            <input type="hidden" name="co_id" value=""> <%# For update %>
+            <input type="hidden" name="comment_token" value="<%= locals.comment_token || '' %>">
+
+            <% if (!locals.is_member) { %>
+            <div class="guest_info">
+                <input type="text" name="co_name" placeholder="이름" required>
+                <input type="password" name="co_password" placeholder="비밀번호" required>
+            </div>
+            <% } %>
+
+            <textarea id="co_content" name="co_content" maxlength="10000" required placeholder="댓글 내용을 입력해주세요."></textarea>
+
+            <div class="bo_vc_w_opt">
+                <% if (locals.use_comment_secret) { %>
+                <label><input type="checkbox" name="co_secret" value="secret"> 비밀글</label>
+                <% } %>
+                <button type="submit" class="btn_submit">댓글 등록</button>
+            </div>
+        </form>
+    </aside>
+    <% } else if (!locals.is_member) { %>
+        <p class="guest_comment_prompt">댓글을 쓰시려면 <a href="/login?redirect=/board/<%= bo_table %>/<%= wr_id %>">로그인</a> 해주세요.</p>
+    <% } %>
+</section>
+
+<style>
+/* Basic styling for comments for demonstration */
+#bo_vc { margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px; }
+#bo_vc h2 { font-size: 1.2em; margin-bottom: 10px; }
+.bo_vc_article { padding: 10px 0; border-bottom: 1px dotted #eee; }
+.bo_vc_article:last-child { border-bottom: none; }
+.bo_vc_reply { margin-left: 20px; /* Indent replies */ }
+.bo_vc_article .profile_info { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.9em; }
+.bo_vc_article .pf_img { margin-right: 8px; }
+.bo_vc_article .profile_info_ct strong { font-weight: bold; }
+.bo_vc_article .profile_info_ct .if_date { color: #777; margin-left: 10px; }
+.cmt_contents { line-height: 1.5; margin-bottom: 5px; }
+.cmt_options a { margin-right: 10px; font-size: 0.85em; color: #555; text-decoration:none; }
+.no_comment { text-align: center; padding: 15px; color: #777; }
+
+#bo_vc_w { margin-top: 15px; padding: 15px; background-color: #f9f9f9; border: 1px solid #eee; }
+#bo_vc_w h2 { font-size: 1.1em; margin-bottom: 10px; }
+#bo_vc_w .guest_info input { margin-right: 5px; padding: 5px; border: 1px solid #ccc; }
+#bo_vc_w textarea { width: 100%; height: 80px; padding: 8px; border: 1px solid #ccc; box-sizing: border-box; margin-bottom: 10px; }
+#bo_vc_w .bo_vc_w_opt { text-align: right; }
+#bo_vc_w .btn_submit { padding: 8px 15px; background-color: #555; color: white; border: none; cursor: pointer; }
+.guest_comment_prompt { text-align:center; margin-top:15px; }
+</style>

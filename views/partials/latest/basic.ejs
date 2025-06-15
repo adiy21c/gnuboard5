@@ -1,0 +1,28 @@
+<%# views/partials/latest/basic.ejs %>
+<% if (locals.items && items.length > 0) { %>
+<div class="latest-basic">
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <ul>
+        <% items.forEach(item => { %>
+            <li>
+                <a href="<%= item.href %>">
+                    <% if (item.category) { %>
+                        <span class="category">[<%= item.category %>]</span>
+                    <% } %>
+                    <%= item.subject %>
+                    <% if (item.comment_cnt > 0) { %>
+                        <span class="comment-count">(<%= item.comment_cnt %>)</span>
+                    <% } %>
+                </a>
+                <span class="datetime"><%= new Date(item.datetime).toLocaleDateString() %></span>
+            </li>
+        <% }); %>
+    </ul>
+    <% if (locals.bo_table) { %>
+        <a href="/bbs/board.php?bo_table=<%= bo_table %>" class="more-link">더보기</a>
+    <% } %>
+</div>
+<% } else { %>
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <p>최신글이 없습니다.</p>
+<% } %>

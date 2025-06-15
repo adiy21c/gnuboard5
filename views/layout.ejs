@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<% if (locals.isMobile) { %>
+<meta name="viewport" id="meta_viewport" content="width=device-width,initial-scale=1.0,minimum-scale=0,maximum-scale=10">
+<meta name="HandheldFriendly" content="true">
+<meta name="format-detection" content="telephone=no">
+<% } else { %>
+<meta http-equiv="imagetoolbar" content="no">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<% } %>
+<title><%= title %></title>
+<link rel="stylesheet" href="/css/default.css">
+<!--[if lte IE 8]>
+<script src="/js/html5.js"></script>
+<![endif]-->
+<script>
+// 자바스크립트에서 사용하는 전역변수 선언
+var g5_url       = "<%= locals.g5_url || '' %>";
+var g5_bbs_url   = "<%= locals.g5_bbs_url || '/bbs' %>";
+var g5_is_member = <%= locals.is_member || false %>;
+var g5_is_admin  = <%= locals.is_admin || false %>;
+var g5_is_mobile = <%= locals.isMobile || false %>;
+var g5_bo_table  = "<%= locals.bo_table || '' %>";
+var g5_sca       = "<%= locals.sca || '' %>";
+var g5_editor    = "<%= locals.editor || '' %>";
+var g5_cookie_domain = "<%= locals.g5_cookie_domain || '' %>";
+<% if (locals.isMobile) { %>
+var g5_theme_ мобильный_url = "<%= locals.g5_theme_mobile_url || '' %>";
+var g5_theme_url = "<%= locals.g5_theme_url || '' %>";
+<% } %>
+<% if (locals.add_script) { %><%- locals.add_script %><% } %>
+</script>
+<script src="/js/jquery-1.12.4.min.js"></script>
+<% if (locals.isMobile) { %>
+<script src="/js/jquery.mobile.custom.min.js"></script>
+<% } %>
+<script src="/js/common.js"></script>
+<script src="/js/wrest.js"></script>
+<% if (locals.isMobile) { %>
+<script src="/js/swipe.js"></script>
+<% } %>
+<% if (locals.config && locals.config.cf_add_script) { %><%- locals.config.cf_add_script %><% } %>
+
+</head>
+<body>
+
+<%- include('partials/header') %>
+
+<!-- 콘텐츠 시작 { -->
+<div id="wrapper">
+    <div id="container_wr">
+        <div id="container">
+            <% if (!locals.is_index) { %><h2 id="container_title"><span title="<%= locals.page_title || title %>"><%= locals.page_title || title %></span></h2><% } %>
+            <%- body %>
+        </div>
+        <%- include('partials/aside') %>
+    </div>
+</div>
+<!-- } 콘텐츠 끝 -->
+
+<%- include('partials/footer') %>
+
+<% if (locals.config && locals.config.cf_analytics) { %>
+<%- locals.config.cf_analytics %>
+<% } %>
+
+<!-- } 하단 끝 -->
+<script>
+$(function() {
+    // 폰트 리사이즈 쿠키있으면 실행
+    if (typeof font_resize === "function") {
+        font_resize("container", get_cookie("ck_font_resize_rmv_class"), get_cookie("ck_font_resize_add_class"));
+    }
+});
+</script>
+</body>
+</html>

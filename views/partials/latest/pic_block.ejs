@@ -1,0 +1,55 @@
+<%# views/partials/latest/pic_block.ejs %>
+<% if (locals.items && items.length > 0) { %>
+<div class="latest-pic-block">
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <div class="items-wrapper">
+        <% items.forEach(item => { %>
+            <div class="item-block">
+                <a href="<%= item.href %>">
+                    <% if (item.image_src) { %>
+                        <div class="thumbnail-wrapper">
+                            <img src="<%= item.image_src %>" alt="<%= item.subject %>" class="thumbnail">
+                        </div>
+                    <% } else { %>
+                        <span class="no-image">[이미지 없음]</span>
+                    <% } %>
+                    <div class="info">
+                        <% if (item.category) { %>
+                            <span class="category">[<%= item.category %>]</span>
+                        <% } %>
+                        <strong class="subject"><%= item.subject %></strong>
+                        <span class="datetime"><%= new Date(item.datetime).toLocaleDateString() %></span>
+                        <% if (item.comment_cnt > 0) { %>
+                            <span class="comment-count">(<%= item.comment_cnt %>)</span>
+                        <% } %>
+                    </div>
+                </a>
+            </div>
+        <% }); %>
+    </div>
+    <% if (locals.bo_table) { %>
+        <a href="/bbs/board.php?bo_table=<%= bo_table %>" class="more-link">더보기</a>
+    <% } %>
+</div>
+<% } else { %>
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <p>최신글이 없습니다.</p>
+<% } %>
+
+<style>
+.latest-pic-block .items-wrapper { display: flex; flex-wrap: wrap; margin: -5px; }
+.latest-pic-block .item-block { margin: 5px; width: calc(25% - 10px); /* 4 items for larger screens */ box-sizing: border-box; }
+.latest-pic-block .item-block a { display: block; text-decoration: none; color: #333; border: 1px solid #eee; padding: 10px; background: #fff; }
+.latest-pic-block .thumbnail-wrapper { width: 100%; height: 150px; /* Fixed height for blocks */ overflow: hidden; margin-bottom: 8px; }
+.latest-pic-block .thumbnail { width: 100%; height: 100%; object-fit: cover; }
+.latest-pic-block .no-image { display: flex; align-items: center; justify-content: center; width: 100%; height: 150px; background-color: #f0f0f0; color: #aaa; }
+.latest-pic-block .info .subject { display: block; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.latest-pic-block .info .datetime { font-size: 0.8em; color: #777; }
+.latest-pic-block .info .category { font-size: 0.8em; color: #007bff; }
+.latest-pic-block .info .comment-count { font-size: 0.8em; color: #ff7f50; }
+.latest-pic-block .more-link { display: block; text-align: right; margin-top: 10px; }
+
+@media (max-width: 768px) {
+    .latest-pic-block .item-block { width: calc(50% - 10px); /* 2 items for smaller screens */ }
+}
+</style>

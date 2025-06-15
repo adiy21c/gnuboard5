@@ -1,0 +1,243 @@
+<%# views/board/list.ejs %>
+
+<%
+// Helper to format date, assuming posts have a wr_datetime
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    // Simple YYYY-MM-DD format
+    const year = date.getFullYear();
+    const month = ('0' + (date.getMonth() + 1)).slice(-2);
+    const day = ('0' + date.getDate()).slice(-2);
+    return `${year}-${month}-${day}`;
+}
+
+// Variables that would typically be passed from the controller or available globally
+const is_checkbox = board.bo_use_checkbox || false; // Assuming board setting
+const is_good = board.bo_use_good || false;
+const is_nogood = board.bo_use_nogood || false;
+const width = board.bo_width || '100%'; // Board width
+
+let colspan = 5;
+if (is_checkbox) colspan++;
+if (is_good) colspan++;
+if (is_nogood) colspan++;
+
+// Dummy category_option for now, this should be generated based on board.bo_category_list
+const category_option = board.bo_use_category ? '<li><a href="#">전체</a></li><li><a href="#">카테고리1</a></li>' : '';
+const qstr = `sfl=${locals.sfl || ''}&stx=${locals.stx || ''}&sca=${locals.sca || ''}`; // For links
+
+// Admin, RSS, Write links (placeholders, should be dynamic)
+const admin_href = locals.is_admin ? `/adm/board_form.php?bo_table=${bo_table}` : '';
+const rss_href = `/bbs/rss.php?bo_table=${bo_table}`;
+const write_href = `/board/${bo_table}/write`; // Assuming a write route
+
+%>
+
+<link rel="stylesheet" href="/board_skins/basic/style.css"> <%# Assuming a similar path for skin CSS %>
+
+<div id="bo_list" style="width:<%= width %>;">
+
+    <% if (board.bo_use_category) { %>
+    <nav id="bo_cate">
+        <h2><%= board.bo_subject %> 카테고리</h2>
+        <ul id="bo_cate_ul">
+            <%- category_option %>
+        </ul>
+    </nav>
+    <% } %>
+
+    <form name="fboardlist" id="fboardlist" action="/bbs/board_list_update.php" method="post">
+        <input type="hidden" name="bo_table" value="<%= bo_table %>">
+        <input type="hidden" name="sfl" value="<%= locals.sfl || '' %>">
+        <input type="hidden" name="stx" value="<%= locals.stx || '' %>">
+        <input type="hidden" name="page" value="<%= currentPage %>">
+        <input type="hidden" name="sw" value="">
+
+        <div id="bo_btn_top">
+            <div id="bo_list_total">
+                <span>Total <%= posts.length %>건</span> <%# This should be total_count from controller %>
+                <%= currentPage %> / <%= totalPages %> 페이지
+            </div>
+
+            <ul class="btn_bo_user">
+                <% if (admin_href) { %><li><a href="<%= admin_href %>" class="btn_admin btn" title="관리자"><i class="fa fa-cog"></i><span class="sound_only">관리자</span></a></li><% } %>
+                <% if (rss_href) { %><li><a href="<%= rss_href %>" class="btn_b01 btn" title="RSS"><i class="fa fa-rss"></i><span class="sound_only">RSS</span></a></li><% } %>
+                <li><button type="button" class="btn_bo_sch btn_b01 btn" title="게시판 검색"><i class="fa fa-search"></i><span class="sound_only">게시판 검색</span></button></li>
+                <% if (write_href) { %><li><a href="<%= write_href %>" class="btn_b01 btn" title="글쓰기"><i class="fa fa-pencil"></i><span class="sound_only">글쓰기</span></a></li><% } %>
+                <% if (is_admin || locals.is_auth_list_options) { %>
+                <li>
+                    <button type="button" class="btn_more_opt is_list_btn btn_b01 btn" title="게시판 리스트 옵션"><i class="fa fa-ellipsis-v"></i><span class="sound_only">옵션</span></button>
+                    <% if (is_checkbox) { %>
+                    <ul class="more_opt is_list_btn" style="display:none;">
+                        <li><button type="submit" name="btn_submit" value="선택삭제"><i class="fa fa-trash-o"></i> 선택삭제</button></li>
+                        <li><button type="submit" name="btn_submit" value="선택복사"><i class="fa fa-files-o"></i> 선택복사</button></li>
+                        <li><button type="submit" name="btn_submit" value="선택이동"><i class="fa fa-arrows"></i> 선택이동</button></li>
+                    </ul>
+                    <% } %>
+                </li>
+                <% } %>
+            </ul>
+        </div>
+
+        <div class="tbl_head01 tbl_wrap">
+            <table>
+                <caption><%= board.bo_subject %> 목록</caption>
+                <thead>
+                <tr>
+                    <% if (is_checkbox) { %>
+                    <th scope="col" class="all_chk chk_box">
+                        <input type="checkbox" id="chkall" onclick="if (this.checked) all_checked(true); else all_checked(false);" class="selec_chk">
+                        <label for="chkall"><span></span><b class="sound_only">전체선택</b></label>
+                    </th>
+                    <% } %>
+                    <th scope="col">번호</th>
+                    <th scope="col">제목</th>
+                    <th scope="col">글쓴이</th>
+                    <th scope="col">조회</th>
+                    <% if (is_good) { %><th scope="col">추천</th><% } %>
+                    <% if (is_nogood) { %><th scope="col">비추천</th><% } %>
+                    <th scope="col">날짜</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% if (posts && posts.length > 0) { %>
+                    <% posts.forEach((post, i) => { %>
+                        <% const is_notice = post.is_notice || false; // Assuming controller sets this %>
+                        <% const current_wr_id = locals.wr_id || null; %>
+                        <tr class="<%= is_notice ? 'bo_notice' : '' %> <%= i % 2 === 0 ? 'even' : '' %>">
+                            <% if (is_checkbox) { %>
+                            <td class="td_chk chk_box">
+                                <input type="checkbox" name="chk_wr_id[]" value="<%= post.wr_id %>" id="chk_wr_id_<%= i %>" class="selec_chk">
+                                <label for="chk_wr_id_<%= i %>"><span></span><b class="sound_only"><%= post.wr_subject %></b></label>
+                            </td>
+                            <% } %>
+                            <td class="td_num2">
+                                <% if (is_notice) { %>
+                                    <strong class="notice_icon">공지</strong>
+                                <% } else if (current_wr_id == post.wr_id) { %>
+                                    <span class="bo_current">열람중</span>
+                                <% } else { %>
+                                    <%= post.num || post.wr_id %> <%# Use 'num' if provided (for notices etc), else wr_id or list index %>
+                                <% } %>
+                            </td>
+                            <td class="td_subject" style="padding-left:<%= post.wr_reply ? (post.wr_reply.length * 10) : '0' %>px">
+                                <% if (board.bo_use_category && post.ca_name) { %>
+                                    <a href="/board/<%= bo_table %>?sca=<%= post.ca_name %>" class="bo_cate_link"><%= post.ca_name %></a>
+                                <% } %>
+                                <div class="bo_tit">
+                                    <a href="/board/<%= bo_table %>/<%= post.wr_id %>?<%= qstr %>">
+                                        <%# post.icon_reply %> <%# Implement icon logic if needed %>
+                                        <%# post.icon_secret %>
+                                        <%= post.wr_subject %>
+                                    </a>
+                                    <%# post.icon_new %>
+                                    <%# post.icon_hot %>
+                                    <%# post.icon_file %>
+                                    <%# post.icon_link %>
+                                    <% if (post.wr_comment > 0) { %><span class="sound_only">댓글</span><span class="cnt_cmt"><%= post.wr_comment %></span><span class="sound_only">개</span><% } %>
+                                </div>
+                            </td>
+                            <td class="td_name sv_use"><%= post.wr_name || post.mb_id || '익명' %></td>
+                            <td class="td_num"><%= post.wr_hit %></td>
+                            <% if (is_good) { %><td class="td_num"><%= post.wr_good || 0 %></td><% } %>
+                            <% if (is_nogood) { %><td class="td_num"><%= post.wr_nogood || 0 %></td><% } %>
+                            <td class="td_datetime"><%= formatDate(post.wr_datetime) %></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr><td colspan="<%= colspan %>" class="empty_table">게시물이 없습니다.</td></tr>
+                <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <%# Pagination - Simple example %>
+        <div class="pagination">
+            <% if (totalPages > 0) { %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <% if (i === currentPage) { %>
+                        <span class="current_page"><strong><%= i %></strong></span>
+                    <% } else { %>
+                        <a href="/board/<%= bo_table %>?page=<%= i %>&<%= qstr %>"><%= i %></a>
+                    <% } %>
+                <% } %>
+            <% } %>
+        </div>
+
+        <% if (is_checkbox || write_href) { %>
+        <div class="bo_fx">
+            <ul class="btn_bo_user">
+                <% if (admin_href) { %><li><a href="<%= admin_href %>" class="btn_admin btn" title="관리자"><i class="fa fa-cog"></i></a></li><% } %>
+                <% if (rss_href) { %><li><a href="<%= rss_href %>" class="btn_b01 btn" title="RSS"><i class="fa fa-rss"></i></a></li><% } %>
+                <% if (write_href) { %><li><a href="<%= write_href %>" class="btn_b01 btn" title="글쓰기"><i class="fa fa-pencil"></i></a></li><% } %>
+            </ul>
+        </div>
+        <% } %>
+    </form>
+
+    <div class="bo_sch_wrap" style="display:none;">
+        <fieldset class="bo_sch">
+            <h3>검색</h3>
+            <form name="fsearch" method="get" action="/board/<%= bo_table %>">
+                <input type="hidden" name="sca" value="<%= locals.sca || '' %>">
+                <label for="sfl" class="sound_only">검색대상</label>
+                <select name="sfl" id="sfl">
+                    <option value="wr_subject" <%= (locals.sfl === 'wr_subject' ? 'selected' : '') %>>제목</option>
+                    <option value="wr_content" <%= (locals.sfl === 'wr_content' ? 'selected' : '') %>>내용</option>
+                    <option value="wr_subject||wr_content" <%= (locals.sfl === 'wr_subject||wr_content' ? 'selected' : '') %>>제목+내용</option>
+                    <option value="mb_id" <%= (locals.sfl === 'mb_id' ? 'selected' : '') %>>회원ID</option>
+                    <option value="wr_name" <%= (locals.sfl === 'wr_name' ? 'selected' : '') %>>글쓴이</option>
+                </select>
+                <label for="stx" class="sound_only">검색어<strong class="sound_only"> 필수</strong></label>
+                <div class="sch_bar">
+                    <input type="text" name="stx" value="<%= locals.stx || '' %>" required id="stx" class="sch_input" size="25" maxlength="20" placeholder=" 검색어를 입력해주세요">
+                    <button type="submit" value="검색" class="sch_btn"><i class="fa fa-search"></i><span class="sound_only">검색</span></button>
+                </div>
+                <button type="button" class="bo_sch_cls" title="닫기"><i class="fa fa-times"></i><span class="sound_only">닫기</span></button>
+            </form>
+        </fieldset>
+        <div class="bo_sch_bg"></div>
+    </div>
+    <script>
+    jQuery(function($){
+        $(".btn_bo_sch").on("click", function() { $(".bo_sch_wrap").toggle(); });
+        $('.bo_sch_bg, .bo_sch_cls').click(function(){ $('.bo_sch_wrap').hide(); });
+        <% if (is_checkbox) { %>
+        $(".btn_more_opt.is_list_btn").on("click", function(e) {
+            e.stopPropagation();
+            $(".more_opt.is_list_btn").toggle();
+        });
+        $(document).on("click", function (e) {
+            if(!$(e.target).closest('.is_list_btn').length) {
+                $(".more_opt.is_list_btn").hide();
+            }
+        });
+        <% } %>
+    });
+    <% if (is_checkbox) { %>
+    function all_checked(sw) { /* ... original JS ... */ }
+    function fboardlist_submit(f) { /* ... original JS ... */ return false; } // Simplified for now
+    function select_copy(sw) { /* ... original JS ... */ }
+    <% } %>
+    </script>
+</div>
+
+<style>
+/* Basic styling for pagination and buttons for demo */
+.pagination a, .pagination strong { margin: 0 5px; padding: 5px 10px; border: 1px solid #ddd; text-decoration: none; }
+.pagination strong { background-color: #007bff; color: white; border-color: #007bff; }
+.btn_bo_user { list-style: none; padding: 0; margin: 10px 0; display: flex; gap: 5px; }
+.btn_bo_user li a, .btn_bo_user li button { padding: 8px 12px; border: 1px solid #ccc; background-color: #f0f0f0; text-decoration: none; color: #333; cursor: pointer; }
+.btn_bo_user li a:hover, .btn_bo_user li button:hover { background-color: #e0e0e0; }
+.tbl_head01 th { background-color: #f8f9fa; padding: 8px; border-bottom: 1px solid #dee2e6; }
+.tbl_head01 td { padding: 8px; border-bottom: 1px solid #eee; }
+.bo_notice td { background-color: #fff3cd; }
+.empty_table td { text-align: center; padding: 20px; }
+/* Add basic styles for search box if not already in default.css */
+.bo_sch_wrap { position:relative; margin-top:15px; padding:15px; border:1px solid #ccc; background:#f8f8f8; }
+.bo_sch_wrap .sch_bar { display:flex; }
+.bo_sch_wrap .sch_input { flex-grow:1; padding:5px; border:1px solid #ddd; }
+.bo_sch_wrap .sch_btn { padding:5px 10px; background:#555; color:white; border:none; cursor:pointer; }
+.bo_sch_wrap .bo_sch_cls { position:absolute; top:5px; right:5px; background:transparent; border:none; font-size:1.2em; cursor:pointer;}
+</style>

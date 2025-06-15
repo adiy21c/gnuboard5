@@ -1,0 +1,256 @@
+<%# views/board/view.ejs %>
+
+<%
+// Helper function to format date
+function formatDate(dateString, format = 'y-m-d H:i') {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = ('0' + (date.getMonth() + 1)).slice(-2);
+    const day = ('0' + date.getDate()).slice(-2);
+    const hours = ('0' + date.getHours()).slice(-2);
+    const minutes = ('0' + date.getMinutes()).slice(-2);
+
+    if (format === 'y-m-d H:i') {
+        return `${year.toString().slice(-2)}-${month}-${day} ${hours}:${minutes}`;
+    }
+    return `${year}-${month}-${day}`;
+}
+
+// Placeholder for functions that would be more complex
+// const get_member_profile_img = (mb_id) => mb_id ? `<img src="/img/no_profile.gif" alt="profile" style="width:30px;height:30px;border-radius:50%;"> (${mb_id})` : '<img src="/img/no_profile.gif" alt="profile" style="width:30px;height:30px;border-radius:50%;">';
+const get_member_profile_img = (mb_id) => {
+    // In a real scenario, you might fetch profile image URL based on mb_id
+    // For now, a placeholder or default image:
+    const profileImgSrc = locals.member_profile_images && locals.member_profile_images[mb_id]
+                        ? locals.member_profile_images[mb_id]
+                        : '/img/no_profile.gif';
+    return `<img src="${profileImgSrc}" alt="profile" style="width:30px;height:30px;border-radius:50%;">`;
+};
+
+const cut_str = (str, len) => str.length > len ? str.substring(0, len) + '...' : str;
+const number_format = (num) => new Intl.NumberFormat().format(num || 0);
+
+// Links (should be generated in controller with proper query strings)
+const list_href = `/board/${bo_table}?${locals.qstr || ''}`;
+const reply_href = `/board/${bo_table}/write?wr_id=${post.wr_id}&mode=reply&${locals.qstr || ''}`; // Assuming write route with mode
+const write_href = `/board/${bo_table}/write?${locals.qstr || ''}`;
+const update_href = locals.is_owner_or_admin ? `/board/${bo_table}/write?wr_id=${post.wr_id}&mode=update&${locals.qstr || ''}` : '';
+const delete_href = locals.is_owner_or_admin ? `/board/${bo_table}/delete/${post.wr_id}?${locals.qstr || ''}` : ''; // Needs a delete route
+const scrap_href = `/bbs/scrap.php?bo_table=${bo_table}&wr_id=${post.wr_id}`; // Placeholder
+const good_href = `/bbs/good.php?bo_table=${bo_table}&wr_id=${post.wr_id}&good=good`; // Placeholder
+const nogood_href = `/bbs/good.php?bo_table=${bo_table}&wr_id=${post.wr_id}&good=nogood`; // Placeholder
+
+// Previous/Next post (data should come from controller)
+const prev_href = locals.prev_post ? `/board/${bo_table}/${locals.prev_post.wr_id}` : '';
+const prev_wr_subject = locals.prev_post ? cut_str(locals.prev_post.wr_subject, 30) : '';
+const prev_wr_date = locals.prev_post ? formatDate(locals.prev_post.wr_datetime, 'y.m.d') : '';
+
+const next_href = locals.next_post ? `/board/${bo_table}/${locals.next_post.wr_id}` : '';
+const next_wr_subject = locals.next_post ? cut_str(locals.next_post.wr_subject, 30) : '';
+const next_wr_date = locals.next_post ? formatDate(locals.next_post.wr_datetime, 'y.m.d') : '';
+
+%>
+
+<link rel="stylesheet" href="/board_skins/basic/style.css"> <%# Assuming skin CSS path %>
+<script src="/js/viewimageresize.js"></script>
+
+<article id="bo_v" style="width:<%= board.bo_width || '100%' %>;">
+    <header>
+        <h2 id="bo_v_title">
+            <% if (post.ca_name) { %>
+            <span class="bo_v_cate"><%= post.ca_name %></span>
+            <% } %>
+            <span class="bo_v_tit"><%= cut_str(post.wr_subject, 70) %></span>
+        </h2>
+    </header>
+
+    <section id="bo_v_info">
+        <h2>페이지 정보</h2>
+        <div class="profile_info">
+		<div class="pf_img"><%- get_member_profile_img(post.mb_id) %></div>
+		<div class="profile_info_ct">
+			<span class="sound_only">작성자</span>
+                <strong><%= post.wr_name || post.mb_id || '익명' %>
+                    <% if (locals.is_ip_view && post.wr_ip) { %>&nbsp;(<%= post.wr_ip.substring(0, post.wr_ip.lastIndexOf('.') + 1) %>x) <% } %>
+                </strong><br>
+			<span class="sound_only">댓글</span><strong><a href="#bo_vc"> <i class="fa fa-commenting-o"></i> <%= number_format(post.wr_comment) %>건</a></strong>
+			<span class="sound_only">조회</span><strong><i class="fa fa-eye"></i> <%= number_format(post.wr_hit) %>회</strong>
+			<strong class="if_date"><span class="sound_only">작성일</span><i class="fa fa-clock-o"></i> <%= formatDate(post.wr_datetime) %></strong>
+		</div>
+	</div>
+
+	    <div id="bo_v_top">
+	        <ul class="btn_bo_user bo_v_com">
+				<li><a href="<%= list_href %>" class="btn_b01 btn" title="목록"><i class="fa fa-list"></i><span class="sound_only">목록</span></a></li>
+	            <% if (reply_href && board.bo_reply_level <= locals.member_level ) { %><li><a href="<%= reply_href %>" class="btn_b01 btn" title="답변"><i class="fa fa-reply"></i><span class="sound_only">답변</span></a></li><% } %>
+	            <% if (write_href && board.bo_write_level <= locals.member_level) { %><li><a href="<%= write_href %>" class="btn_b01 btn" title="글쓰기"><i class="fa fa-pencil"></i><span class="sound_only">글쓰기</span></a></li><% } %>
+			<% if(update_href || delete_href || locals.is_admin) { %>
+			<li>
+				<button type="button" class="btn_more_opt is_view_btn btn_b01 btn"><i class="fa fa-ellipsis-v"></i><span class="sound_only">옵션</span></button>
+				<ul class="more_opt is_view_btn" style="display:none;">
+			            <% if (update_href) { %><li><a href="<%= update_href %>">수정<i class="fa fa-pencil-square-o"></i></a></li><% } %>
+			            <% if (delete_href) { %><li><a href="<%= delete_href %>" onclick="del(this.href); return false;">삭제<i class="fa fa-trash-o"></i></a></li><% } %>
+			            <%# Copy, Move, Search links can be added if functionality exists %>
+			        </ul>
+			</li>
+			<% } %>
+	        </ul>
+	        <script>
+            jQuery(function($){
+				$(".btn_more_opt.is_view_btn").on("click", function(e) {
+                    e.stopPropagation(); $(".more_opt.is_view_btn").toggle();
+                });
+                $(document).on("click", function (e) {
+                    if(!$(e.target).closest('.is_view_btn').length) { $(".more_opt.is_view_btn").hide(); }
+                });
+            });
+            function del(href) { if(confirm("정말 삭제하시겠습니까?")) { document.location.href = href; }}
+            </script>
+	    </div>
+    </section>
+
+    <section id="bo_v_atc">
+        <h2 id="bo_v_atc_title">본문</h2>
+        <div id="bo_v_share">
+            <%# SNS share buttons can be added here %>
+	        <% if (scrap_href && locals.is_member) { %><a href="<%= scrap_href %>" target="_blank" class="btn btn_b03" onclick="win_scrap(this.href); return false;"><i class="fa fa-bookmark"></i> 스크랩</a><% } %>
+	    </div>
+
+        <%# File Output: This needs data from controller (post.files) %>
+        <% if (locals.post_files && post_files.length > 0) { %>
+            <div id="bo_v_img">
+            <% post_files.forEach(file => { %>
+                <% if (file.is_image) { %> <img src="<%= file.url %>" alt="<%= file.name %>" style="max-width:100%;"> <% } %>
+            <% }); %>
+            </div>
+        <% } %>
+
+        <div id="bo_v_con"><%- post.wr_content %></div> <%# Use <%- for HTML content %>
+
+        <% if (locals.is_signature && post.mb_signature) { %><p><%- post.mb_signature %></p><% } %>
+
+        <% if ( (board.bo_use_good && locals.is_member) || (board.bo_use_nogood && locals.is_member) ) { %>
+        <div id="bo_v_act">
+            <% if (board.bo_use_good) { %>
+            <span class="bo_v_act_gng">
+                <a href="<%= good_href %>" id="good_button" class="bo_v_good"><i class="fa fa-thumbs-o-up"></i><span class="sound_only">추천</span><strong><%= number_format(post.wr_good) %></strong></a>
+                <b id="bo_v_act_good"></b>
+            </span>
+            <% } %>
+            <% if (board.bo_use_nogood) { %>
+            <span class="bo_v_act_gng">
+                <a href="<%= nogood_href %>" id="nogood_button" class="bo_v_nogood"><i class="fa fa-thumbs-o-down"></i><span class="sound_only">비추천</span><strong><%= number_format(post.wr_nogood) %></strong></a>
+                <b id="bo_v_act_nogood"></b>
+            </span>
+            <% } %>
+        </div>
+        <% } else if (board.bo_use_good || board.bo_use_nogood) { %>
+             <div id="bo_v_act">
+                <% if(board.bo_use_good) { %><span class="bo_v_good"><i class="fa fa-thumbs-o-up"></i><span class="sound_only">추천</span><strong><%= number_format(post.wr_good) %></strong></span><% } %>
+                <% if(board.bo_use_nogood) { %><span class="bo_v_nogood"><i class="fa fa-thumbs-o-down"></i><span class="sound_only">비추천</span><strong><%= number_format(post.wr_nogood) %></strong></span><% } %>
+            </div>
+        <% } %>
+    </section>
+
+    <% if (locals.post_files && post_files.filter(f => !f.is_image).length > 0) { %>
+    <section id="bo_v_file">
+        <h2>첨부파일</h2>
+        <ul>
+        <% post_files.forEach(file => { %>
+            <% if (!file.is_image) { %>
+            <li>
+		<i class="fa fa-folder-open"></i>
+                <a href="<%= file.download_href %>" class="view_file_download">
+                    <strong><%= file.source_name %></strong> <%= file.content_desc %> (<%= file.size_kb %> KB)
+                </a>
+                <br>
+                <span class="bo_v_file_cnt"><%= file.download_count %>회 다운로드 | DATE : <%= formatDate(file.datetime, 'Y-m-d') %></span>
+            </li>
+            <% } %>
+        <% }); %>
+        </ul>
+    </section>
+    <% } %>
+
+    <% if (locals.post_links && post_links.length > 0) { %>
+    <section id="bo_v_link">
+        <h2>관련링크</h2>
+        <ul>
+        <% post_links.forEach(link => { %>
+            <li>
+                <i class="fa fa-link"></i>
+                <a href="<%= link.href %>" target="_blank">
+                    <strong><%= link.text %></strong>
+                </a>
+                <br>
+                <span class="bo_v_link_cnt"><%= link.hit %>회 연결</span>
+            </li>
+        <% }); %>
+        </ul>
+    </section>
+    <% } %>
+
+    <% if (prev_href || next_href) { %>
+    <ul class="bo_v_nb">
+        <% if (prev_href) { %><li class="btn_prv"><span class="nb_tit"><i class="fa fa-chevron-up"></i> 이전글</span><a href="<%= prev_href %>"><%= prev_wr_subject %></a> <span class="nb_date"><%= prev_wr_date %></span></li><% } %>
+        <% if (next_href) { %><li class="btn_next"><span class="nb_tit"><i class="fa fa-chevron-down"></i> 다음글</span><a href="<%= next_href %>"><%= next_wr_subject %></a>  <span class="nb_date"><%= next_wr_date %></span></li><% } %>
+    </ul>
+    <% } %>
+
+    <%- include('partials/view_comment', { comments: comments, bo_table: bo_table, wr_id: post.wr_id, board: board }) %>
+
+</article>
+
+<script>
+// Add viewimageresize, good/nogood handling, etc. from original skin JS if needed
+$(function() {
+    $("#bo_v_atc").viewimageresize();
+
+    $("#good_button, #nogood_button").click(function(e) {
+        e.preventDefault();
+        // AJAX call for good/nogood - this needs a backend endpoint
+        // For now, just alert
+        alert('추천/비추천 기능은 서버 연동이 필요합니다.');
+        // Example of what original did: excute_good(this.href, $(this), $tx);
+    });
+});
+function win_scrap(href) { window.open(href, 'scrap', 'width=600,height=400,scrollbars=yes'); return false; }
+</script>
+
+<style>
+/* Basic styling from view.skin.php for demonstration */
+#bo_v { margin:15px 0; }
+#bo_v_title { font-size:1.5em; margin-bottom:10px; padding-bottom:10px; border-bottom:2px solid #333; }
+#bo_v_info { margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #eee; }
+.profile_info { display:flex; align-items:center; }
+.pf_img { margin-right:10px; }
+.profile_info_ct strong { margin-right:10px; }
+.profile_info_ct .if_date { color:#777; font-size:0.9em; }
+#bo_v_top { margin-top:10px; }
+.btn_bo_user { list-style:none; padding:0; margin:0; display:flex; gap:5px; }
+.btn_bo_user li a, .btn_bo_user li button { padding:5px 10px; border:1px solid #ccc; background:#f0f0f0; text-decoration:none; color:#333; }
+.btn_bo_user .btn_more_opt { position:relative; }
+.more_opt { position:absolute; top:100%; left:0; background:white; border:1px solid #ccc; padding:5px; display:none; z-index:100; }
+.more_opt li a { display:block; padding:3px 5px; }
+
+#bo_v_atc { margin-bottom:20px; }
+#bo_v_share { text-align:right; margin-bottom:10px; }
+#bo_v_share .btn { margin-left:5px; }
+#bo_v_img img { max-width:100%; height:auto; margin-bottom:10px; }
+#bo_v_con { line-height:1.6; min-height:150px; } /* min-height from original */
+#bo_v_act { text-align:center; margin:20px 0; }
+#bo_v_act_good, #bo_v_act_nogood { display:none; } /* For result text */
+.bo_v_good strong, .bo_v_nogood strong { margin-left:3px; }
+
+#bo_v_file, #bo_v_link { margin:15px 0; padding:10px; border:1px solid #eee; }
+#bo_v_file h2, #bo_v_link h2 { font-size:1.1em; margin-bottom:5px; }
+#bo_v_file ul, #bo_v_link ul { list-style:none; padding:0; margin:0; }
+#bo_v_file li, #bo_v_link li { padding:3px 0; border-bottom:1px dotted #eee; }
+#bo_v_file li:last-child, #bo_v_link li:last-child { border-bottom:none; }
+
+.bo_v_nb { list-style:none; padding:10px 0; margin:20px 0; border-top:1px solid #eee; border-bottom:1px solid #eee; }
+.bo_v_nb li { padding:5px 0; }
+.bo_v_nb .nb_tit { display:inline-block; width:60px; font-weight:bold; }
+.bo_v_nb .nb_date { float:right; color:#777; font-size:0.9em; }
+</style>

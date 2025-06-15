@@ -1,0 +1,53 @@
+<%# views/member/register_result.ejs %>
+
+<link rel="stylesheet" href="/member_skins/basic/style.css"> <%# Assuming skin CSS path %>
+
+<div id="reg_result" class="register">
+    <p class="reg_result_p">
+        <i class="fa fa-gift" aria-hidden="true" style="font-size: 3em; color: #007bff; margin-bottom:15px;"></i><br>
+        <strong><%= member.mb_name || member.mb_nick %></strong>님의 회원가입을 진심으로 축하합니다.
+    </p>
+
+    <% if (locals.use_email_certify) { %> <%# This variable should be passed from controller/config %>
+    <p class="result_txt">
+        회원 가입 시 입력하신 이메일 주소로 인증메일이 발송되었습니다.<br>
+        발송된 인증메일을 확인하신 후 인증처리를 하시면 사이트를 원활하게 이용하실 수 있습니다.
+    </p>
+    <div id="result_email">
+        <span>아이디:</span>
+        <strong><%= member.mb_id %></strong><br>
+        <span>이메일 주소:</span>
+        <strong><%= member.mb_email || '이메일 정보 없음' %></strong>
+    </div>
+    <p>
+        이메일 주소를 잘못 입력하셨다면, 사이트 관리자에게 문의해주시기 바랍니다.
+    </p>
+    <% } %>
+
+    <p class="result_txt">
+        회원님의 비밀번호는 아무도 알 수 없는 암호화 코드로 저장되므로 안심하셔도 좋습니다.<br>
+        아이디, 비밀번호 분실시에는 회원가입시 입력하신 이메일 주소를 이용하여 찾을 수 있습니다.
+    </p>
+
+    <p class="result_txt">
+        회원 탈퇴는 언제든지 가능하며 일정기간이 지난 후, 회원님의 정보는 삭제하고 있습니다.<br>
+        감사합니다.
+    </p>
+</div>
+
+<div class="btn_confirm_reg">
+    <a href="/" class="reg_btn_submit">메인으로</a>
+</div>
+
+<style>
+/* Basic styles from register_result.skin.php for demonstration */
+.register { max-width: 600px; margin: 20px auto; padding: 30px; border: 1px solid #ddd; background: #fff; text-align: center; }
+.reg_result_p { font-size: 1.3em; margin-bottom: 20px; }
+.reg_result_p strong { color: #007bff; }
+.result_txt { margin-bottom: 15px; line-height: 1.6; font-size: 0.95em; color: #555; }
+#result_email { margin: 15px 0; padding: 10px; background-color: #f8f9fa; border: 1px solid #eee; display: inline-block; text-align: left; }
+#result_email span { font-weight: bold; }
+.btn_confirm_reg { text-align: center; margin-top: 20px; }
+.reg_btn_submit { display: inline-block; padding: 12px 30px; background-color: #007bff; color: white; text-decoration: none; border-radius: 3px; font-size: 1.1em; }
+.reg_btn_submit:hover { background-color: #0056b3; }
+</style>

@@ -1,0 +1,48 @@
+<%# views/partials/latest/pic_list.ejs %>
+<% if (locals.items && items.length > 0) { %>
+<div class="latest-pic-list">
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <ul>
+        <% items.forEach(item => { %>
+            <li>
+                <a href="<%= item.href %>">
+                    <% if (item.image_src) { %>
+                        <img src="<%= item.image_src %>" alt="<%= item.subject %>" class="thumbnail">
+                    <% } else { %>
+                        <span class="no-image">[이미지 없음]</span>
+                    <% } %>
+                    <div class="info">
+                        <% if (item.category) { %>
+                            <span class="category">[<%= item.category %>]</span>
+                        <% } %>
+                        <strong class="subject"><%= item.subject %></strong>
+                        <span class="datetime"><%= new Date(item.datetime).toLocaleDateString() %></span>
+                        <% if (item.comment_cnt > 0) { %>
+                            <span class="comment-count">(<%= item.comment_cnt %>)</span>
+                        <% } %>
+                    </div>
+                </a>
+            </li>
+        <% }); %>
+    </ul>
+    <% if (locals.bo_table) { %>
+        <a href="/bbs/board.php?bo_table=<%= bo_table %>" class="more-link">더보기</a>
+    <% } %>
+</div>
+<% } else { %>
+    <% if (locals.title) { %><h3><%= title %></h3><% } %>
+    <p>최신글이 없습니다.</p>
+<% } %>
+
+<style>
+.latest-pic-list ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; }
+.latest-pic-list li { margin: 5px; width: calc(25% - 10px); /* 4 items per row */ }
+.latest-pic-list li a { display: block; text-decoration: none; color: #333; border: 1px solid #ddd; padding: 10px; }
+.latest-pic-list .thumbnail { width: 100%; height: auto; max-height: 120px; object-fit: cover; margin-bottom: 5px; }
+.latest-pic-list .no-image { display: block; text-align: center; padding: 20px 0; background-color: #f0f0f0; }
+.latest-pic-list .info .subject { display: block; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.latest-pic-list .info .datetime { font-size: 0.8em; color: #777; }
+.latest-pic-list .info .category { font-size: 0.8em; color: #007bff; }
+.latest-pic-list .info .comment-count { font-size: 0.8em; color: #ff7f50; }
+.latest-pic-list .more-link { display: block; text-align: right; margin-top: 10px; }
+</style>
